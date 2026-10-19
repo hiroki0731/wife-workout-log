@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>自宅筋トレ記録</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="筋トレ記録">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#087EA5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+/* 画面：上にタブの中身、下に3つのタブ（今日・記録・設定）。スマホ縦持ちが前提 */
+:root{
+  --teal:#087EA5;--deep:#003E52;--pale:#e6f3f7;--accent:#FD9191;--good:#2e9e6b;--hot:#E8505B;--bonus:#F0A028;
+  --ink:#1f2a30;--muted:#66767d;--line:#dde8ec;--ground:#f3f7f8;--paper:#fff;--soft:#eef2f3;
+  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --teal:#2b9cc2;--deep:#cfe9f2;--pale:#15323c;--ink:#e3ecef;--muted:#9fb1b8;--line:#28414a;
+  --ground:#0d181c;--paper:#152328;--soft:#1c2d33;color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+input{font:inherit;color:inherit}
+#app{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 86px)}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--paper);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);z-index:10}
+.tabs button{flex:1;border:0;background:none;padding:9px 0 8px;font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button svg{width:24px;height:24px}
+.tabs button.on{color:var(--teal)}
+h1{font-size:24px;margin:0;color:var(--deep);font-weight:800}
+.sub{font-size:13px;color:var(--muted)}
+.sub.rest{color:var(--bonus);font-weight:700}
+.card{background:var(--paper);border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,40,55,.06)}
+.row{display:flex;align-items:center;gap:8px}
+.sp{flex:1}
+.seg{display:flex;background:var(--soft);border-radius:10px;padding:3px;margin-top:10px}
+.seg button{flex:1;border:0;background:none;border-radius:8px;padding:8px 4px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button.on{background:var(--teal);color:#fff}
+.lbl{font-size:13px;font-weight:700}
+.num{width:64px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);text-align:right;font-variant-numeric:tabular-nums}
+.btn{border:0;border-radius:10px;padding:8px 14px;font-weight:700;background:var(--teal);color:#fff}
+.btn.ghost{background:var(--soft);color:var(--ink)}
+.btn.deep{background:var(--deep);color:var(--paper)}
+.btn:disabled{opacity:.4}
+.pill{border:0;border-radius:999px;padding:6px 13px;font-weight:700;font-size:13px;background:var(--soft)}
+.pill.sm{padding:4px 10px;font-size:12px}
+.ok{color:var(--good)}
+.banner{display:flex;gap:12px;align-items:center}
+.banner .ic{font-size:26px}
+.banner.bonus{background:color-mix(in srgb,var(--bonus) 14%,var(--paper));border:1px solid var(--bonus)}
+.banner b{font-size:16px}
+.summary{display:flex;gap:14px;align-items:center;border:1px solid var(--teal);background:color-mix(in srgb,var(--teal) 6%,var(--paper))}
+.ring{position:relative;width:72px;height:72px;flex:none}
+.ring svg{width:72px;height:72px;transform:rotate(-90deg)}
+.ring .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-variant-numeric:tabular-nums;font-size:15px;line-height:1.15}
+.ring .t i{font-style:normal;color:var(--hot);font-size:12px}
+.head{font-size:18px;font-weight:800}
+.badge{font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px;color:#fff;white-space:nowrap}
+.ex h3{margin:0;font-size:17px;color:var(--deep);display:flex;align-items:center;gap:6px}
+.ex .meta{font-size:13px;color:var(--muted);margin:2px 0 6px}
+.dots{display:flex;align-items:center;gap:5px}
+.dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900}
+.dot.empty{border:2px solid var(--teal)}
+.dot.opt{border:2px dashed color-mix(in srgb,var(--muted) 60%,transparent)}
+.dot.c{background:var(--teal)}
+.dot.x{background:var(--hot)}
+.dsep{width:1px;height:16px;background:var(--line)}
+.steps{display:flex;gap:10px;margin:10px 0 8px}
+.stepper{flex:1;display:flex;align-items:center;justify-content:space-between;background:var(--soft);border-radius:10px;padding:4px}
+.stepper button{width:40px;height:40px;border:0;border-radius:8px;background:var(--paper);font-size:22px;font-weight:700;color:var(--teal)}
+.stepper span{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
+.done{width:100%;padding:13px;font-size:16px}
+.undo{border:0;background:none;color:var(--teal);font-size:13px;padding:8px 0 0}
+.undo:disabled{color:var(--muted);opacity:.5}
+.sug{margin-top:8px;font-size:13px;background:color-mix(in srgb,var(--accent) 30%,var(--paper));border-radius:8px;padding:7px 10px;color:var(--deep);font-weight:600}
+.reps{font-size:13px;color:var(--muted);margin-top:6px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.tile{background:var(--pale);border-radius:12px;padding:12px}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-size:22px;font-weight:800;color:var(--deep);font-variant-numeric:tabular-nums}
+.tile .v.g{color:var(--good)}
+.tile .v small{font-size:15px;color:var(--bonus);margin-left:6px}
+h2{font-size:16px;margin:0 0 10px;color:var(--deep);white-space:nowrap}
+.heat{display:flex;gap:3px}
+.heat .col{display:flex;flex-direction:column;gap:3px}
+.cell{width:21px;height:21px;border-radius:4px;position:relative;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;color:#fff}
+.cell.rest{border:1px dashed color-mix(in srgb,var(--muted) 50%,transparent)}
+.cell.sel{outline:2px solid var(--accent);outline-offset:1px}
+.cell .b{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--bonus);border:1px solid var(--paper)}
+.dn{width:14px;height:21px;font-size:10px;color:var(--muted);display:flex;align-items:center}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:11px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .c{border-radius:6px;padding:5px 0;font-size:11px;font-weight:700;color:var(--muted);background:var(--soft)}
+.cal .c.on{color:#fff}
+.cal .h{font-size:10px;color:var(--muted)}
+.lrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px;gap:8px}
+.lrow:first-child{border-top:0}
+.lrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .v{white-space:nowrap;font-variant-numeric:tabular-nums}
+.del{border:0;background:none;color:var(--muted);font-size:12px;padding:4px 6px;white-space:nowrap}
+.del.arm{color:var(--hot);font-weight:800}
+svg.chart{width:100%;height:170px;display:block}
+select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);max-width:100%}
+.set{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);gap:10px}
+.set:first-child{border-top:0}
+.set>span,.set .sub{white-space:nowrap}
+.mini{display:flex;align-items:center;gap:6px}
+.mini{gap:4px}
+.mini button{width:30px;height:30px;border:0;border-radius:8px;background:var(--soft);font-size:18px;font-weight:700;color:var(--teal)}
+.mini span{min-width:44px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.wd{display:flex;gap:4px}
+.wd{flex-wrap:wrap;justify-content:flex-end}
+.wd button{width:38px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-weight:700}
+.wd button.on{background:var(--muted);color:#fff;border-color:var(--muted)}
+.exname{border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;background:var(--paper);margin-bottom:8px}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 80px);transform:translateX(-50%);background:var(--deep);color:var(--paper);padding:9px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<nav class="tabs" id="tabs"></nav>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+// ===== データ =====
+const KEY = 'home-workout-log-web:v1';
+const DEMO = new URLSearchParams(location.search).has('demo');
+
+const INITIAL = {
+  version: 1,
+  exercises: [
+    {id:'row', name:'ワンハンドロー', kind:'a', order:0, targetReps:12, weight:6, perSide:true, progress:'weight',
+      tip:'肘を腰のポケットに向かって引く。左右それぞれ'},
+    {id:'pushup', name:'ベンチ腕立て伏せ', kind:'a', order:1, targetReps:10, weight:0, perSide:false, progress:'reps', repsStep:2, repsCap:15,
+      capNote:'15回が楽なら、一段低い場所（膝つき→床）へ進みましょう', tip:'頭からかかとまで一直線。できなければテーブルに手をつく'},
+    {id:'overhead', name:'オーバーヘッド・エクステンション', kind:'a', order:2, targetReps:12, weight:5, perSide:false, progress:'weight',
+      tip:'座ってやる。肘を天井に向けたまま、肘から先だけ動かす'},
+    {id:'kneeroller', name:'膝コロ', kind:'a', order:3, targetReps:8, weight:0, perSide:false, progress:'reps', repsStep:1, repsCap:12,
+      capNote:'12回が楽なら、転がす距離を少し伸ばしましょう', tip:'背中を丸めたまま。腰が反る手前で戻る'},
+    {id:'bulgarian', name:'ブルガリアンスクワット', kind:'b', order:0, targetReps:10, weight:0, perSide:true, progress:'weight',
+      tip:'上体を少し前に倒すとお尻に効く。片脚ずつ'},
+    {id:'rdl', name:'ルーマニアンデッドリフト', kind:'b', order:1, targetReps:12, weight:6, perSide:false, progress:'weight',
+      tip:'太ももの裏が突っ張ったところで止める。腰は丸めない'},
+    {id:'hipthrust', name:'ヒップスラスト', kind:'b', order:2, targetReps:15, weight:10, perSide:false, progress:'weight',
+      tip:'肩甲骨をベンチに乗せ、腰にタオルを挟んでダンベルを置く'},
+  ],
+  logs: [], dayKinds: {}, clearSets: 2, goalSets: 3, weightStep: 1, minWeight: 5, weeklyGoal: 3,
+  restWeekdays: [], bodyLogs: [], snacks: {},
+};
+
+function load() {
+  if (DEMO) return demoData();
+  try {
+    const s = localStorage.getItem(KEY);
+    if (s) return Object.assign(structuredClone(INITIAL), JSON.parse(s));
+  } catch (e) {}
+  return structuredClone(INITIAL);
+}
+let data;   // 読み込みは下の部品がそろってから（一番下で load する）
+function save() {
+  if (DEMO) return;
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { toast('保存できませんでした'); }
+}
+// ホーム画面のアプリは消されにくいが、念のためブラウザに長期保存をお願いする
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+
+// ===== 日付 =====
+const pad = n => String(n).padStart(2, '0');
+const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const dateOf = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+const dayLabel = k => { const d = dateOf(k); return `${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`; };
+const timeLabel = iso => { const d = new Date(iso); return `${d.getHours()}:${pad(d.getMinutes())}`; };
+const weekStart = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+const todayKey = () => keyOf(new Date());
+const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+// ===== 記録の計算 =====
+const exById = id => data.exercises.find(e => e.id === id);
+const exercisesOf = kind => data.exercises.filter(e => e.kind === kind).sort((a, b) => a.order - b.order);
+const logsOn = (k, exId) => data.logs.filter(l => keyOf(new Date(l.date)) === k && (!exId || l.ex === exId));
+const kg = w => Number.isInteger(w) ? String(w) : w.toFixed(1);
+const wText = w => w === 0 ? '自重' : `${kg(w)}kg`;
+const isRest = k => data.restWeekdays.includes(dateOf(k).getDay());
+
+function kindFor(k) {
+  if (data.dayKinds[k]) return data.dayKinds[k];
+  const logs = logsOn(k);
+  if (logs.length) {
+    const a = logs.filter(l => (exById(l.ex) || {}).kind === 'a').length;
+    return a * 2 >= logs.length ? 'a' : 'b';
+  }
+  const prev = [...new Set(data.logs.map(l => keyOf(new Date(l.date))))].filter(d => d < k).sort().pop();
+  if (prev) return kindFor(prev) === 'a' ? 'b' : 'a';
+  return 'a';
+}
+function statusFor(k) {
+  const logs = logsOn(k);
+  if (!logs.length) return 'none';
+  const counts = exercisesOf(kindFor(k)).map(e => logs.filter(l => l.ex === e.id).length);
+  if (counts.every(c => c >= data.goalSets)) return 'goal';
+  if (counts.every(c => c >= data.clearSets)) return 'clear';
+  return 'partial';
+}
+const STATUS = {
+  none: {label: '記録なし', color: 'var(--soft)'},
+  partial: {label: '途中', color: 'color-mix(in srgb,var(--teal) 35%,var(--paper))'},
+  clear: {label: 'クリア', color: 'var(--teal)'},
+  goal: {label: '目標達成', color: 'var(--hot)'},
+};
+const nextWeight = w => w < data.minWeight ? data.minWeight : w + data.weightStep;
+const prevWeight = w => { const n = w - data.weightStep; return n < data.minWeight ? 0 : n; };
+
+// 前回その種目をやった日に全セット達成していたら、次の一歩を提案する
+function suggestion(ex, k) {
+  const days = [...new Set(data.logs.filter(l => l.ex === ex.id).map(l => keyOf(new Date(l.date))))].filter(d => d < k).sort();
+  const last = days.pop();
+  if (!last) return null;
+  const sets = logsOn(last, ex.id);
+  if (sets.length < data.clearSets || !sets.every(s => s.reps >= ex.targetReps)) return null;
+  if (ex.progress === 'reps') {
+    const r = ex.targetReps + (ex.repsStep || 2);
+    if (r <= (ex.repsCap || 15)) return {reps: r, weight: ex.weight, msg: `前回は全セット達成。今日は${r}回を入れてあります`};
+    return {reps: ex.targetReps, weight: ex.weight, msg: ex.capNote || '回数は上限です'};
+  }
+  const w = nextWeight(Math.max(ex.weight, ...sets.map(s => s.weight)));
+  return {reps: ex.targetReps, weight: w, msg: `前回は全セット達成。今日は${wText(w)}を入れてあります`};
+}
+function addSet(ex, reps, weight) {
+  data.logs.push({id: uid(), date: new Date().toISOString(), ex: ex.id, reps, weight});
+  if (ex.progress === 'reps' && reps > ex.targetReps) ex.targetReps = reps;
+  ex.weight = weight;
+  save();
+}
+function undoLast(ex) {
+  const k = todayKey();
+  const mine = data.logs.filter(l => l.ex === ex.id && keyOf(new Date(l.date)) === k);
+  const last = mine[mine.length - 1];
+  if (last) { data.logs = data.logs.filter(l => l !== last); save(); }
+}
+function trainedSplit(from, to) {
+  const days = new Set(data.logs.filter(l => { const d = new Date(l.date); return d >= from && d < to; }).map(l => keyOf(new Date(l.date))));
+  const bonus = [...days].filter(isRest).length;
+  return {planned: days.size - bonus, bonus};
+}
+const bodyOn = k => data.bodyLogs.find(b => b.day === k);
+function setBody(k, weight, waist) {
+  data.bodyLogs = data.bodyLogs.filter(b => b.day !== k);
+  if (weight != null || waist != null) data.bodyLogs.push({day: k, weight, waist});
+  data.bodyLogs.sort((a, b) => a.day < b.day ? -1 : 1);
+  save();
+}
+function weightAvg(endKey) {
+  const end = dateOf(endKey), start = addDays(end, -6);
+  const ws = data.bodyLogs.filter(b => b.weight != null && dateOf(b.day) >= start && dateOf(b.day) <= end).map(b => b.weight);
+  return ws.length >= 3 ? ws.reduce((a, b) => a + b, 0) / ws.length : null;
+}
+const SNACK = {
+  none: {label: 'ゼロ', color: 'var(--good)'},
+  little: {label: '少し', color: 'var(--bonus)'},
+  much: {label: '食べた', color: 'var(--hot)'},
+};
+function toggleSnack(k, lv) { if (data.snacks[k] === lv) delete data.snacks[k]; else data.snacks[k] = lv; save(); }
+function snackStreak() {
+  let d = new Date();
+  if (!data.snacks[keyOf(d)]) d = addDays(d, -1);
+  let n = 0;
+  while (data.snacks[keyOf(d)] === 'none') { n++; d = addDays(d, -1); }
+  return n;
+}
+const snackZero7 = () => [...Array(7)].filter((_, i) => data.snacks[keyOf(addDays(new Date(), -i))] === 'none').length;
+
+// ===== 画面 =====
+let tab = new URLSearchParams(location.search).get('tab') || 'today';
+let selected = todayKey();
+let chartEx = 'hipthrust';
+const draft = {};   // 種目カードの回数と重さ（押すまでの一時的な値）
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1600); }
+
+const ICON = {
+  today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
+  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2"/><path d="M3.5 9.5h17M8 3v3M16 3v3"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+};
+function renderTabs() {
+  $('#tabs').innerHTML = [['today', '今日'], ['history', '記録'], ['settings', '種目と目標']]
+    .map(([id, l]) => `<button data-tab="${id}" class="${tab === id ? 'on' : ''}">${ICON[id]}${l}</button>`).join('');
+}
+function render() {
+  renderTabs();
+  $('#app').innerHTML = tab === 'today' ? viewToday() : tab === 'history' ? viewHistory() : viewSettings();
+}
+
+function dotsHTML(count) {
+  const n = Math.max(data.goalSets, count);
+  let h = '';
+  for (let i = 0; i < n; i++) {
+    if (i < count) h += `<span class="dot ${i < data.clearSets ? 'c' : 'x'}">✓</span>`;
+    else h += `<span class="dot ${i < data.clearSets ? 'empty' : 'opt'}"></span>`;
+    if (i === data.clearSets - 1) h += '<span class="dsep"></span>';
+  }
+  return `<div class="dots">${h}<span class="sub" style="margin-left:4px">${count}/${data.goalSets}</span></div>`;
+}
+function snackButtons(k, sm) {
+  return Object.entries(SNACK).map(([lv, s]) =>
+    `<button class="pill ${sm ? 'sm' : ''}" data-snack="${lv}" data-day="${k}" style="${data.snacks[k] === lv ? `background:${s.color};color:#fff` : ''}">${s.label}</button>`).join('');
+}
+
+function viewToday() {
+  const k = todayKey();
+  const kind = kindFor(k), exs = exercisesOf(kind), status = statusFor(k), logs = logsOn(k), rest = isRest(k);
+  const b = bodyOn(k) || {};
+  const yk = keyOf(addDays(new Date(), -1));
+  const streak = snackStreak();
+  let h = `<h1>${dayLabel(k)}</h1>
+    <div class="sub ${rest ? 'rest' : ''}">${rest ? '今日は休みの日' : `${data.clearSets}セットでクリア、${data.goalSets}セットで目標達成`}</div>
+    <div class="seg">${['a', 'b'].map(x => `<button data-kind="${x}" class="${kind === x ? 'on' : ''}">${x === 'a' ? 'A 上半身と腹筋' : 'B 下半身'}</button>`).join('')}</div>`;
+
+  h += `<div class="card"><div class="row">
+      <span class="lbl">朝の体重</span><input class="num" id="w" inputmode="decimal" placeholder="56.0" value="${b.weight ?? ''}"><span class="sub">kg</span>
+      <span class="sp"></span><button class="btn ghost" id="saveBody">${b.weight != null ? '更新' : '記録'}</button>
+    </div>${b.weight != null ? `<div class="note ok">記録しました${weightAvg(k) ? `　7日平均 ${weightAvg(k).toFixed(1)}kg` : ''}</div>` : ''}</div>`;
+
+  h += `<div class="card"><div class="row"><span class="lbl">今日のお菓子</span><span class="sp"></span>${snackButtons(k)}</div>
+    ${!data.snacks[yk] ? `<div class="row" style="margin-top:8px"><span class="sub">昨日は</span><span class="sp"></span>${snackButtons(yk, true)}</div>` : ''}
+    ${streak ? `<div class="note ok" style="font-weight:800">お菓子ゼロ 連続${streak}日</div>` : ''}</div>`;
+
+  if (rest) {
+    h += logs.length
+      ? `<div class="card banner bonus"><span class="ic">＋</span><div><b style="color:var(--bonus)">休みの日にプラスαでやっています</b><div class="sub">予定の外の上乗せです。今週の回数とは別に数えます</div></div></div>`
+      : `<div class="card banner"><span class="ic">🌙</span><div><b>今日は休みの日です</b><div class="sub">やりたくなったら、下の種目はプラスαとして記録されます</div></div></div>`;
+  }
+
+  if (!(rest && !logs.length)) {
+    const counts = exs.map(e => logsOn(k, e.id).length);
+    const done = counts.reduce((a, c) => a + Math.min(c, data.clearSets), 0);
+    const extra = counts.reduce((a, c) => a + Math.max(0, Math.min(c, data.goalSets) - data.clearSets), 0);
+    const total = Math.max(1, exs.length * data.clearSets);
+    const toClear = counts.reduce((a, c) => a + Math.max(0, data.clearSets - c), 0);
+    const toGoal = counts.reduce((a, c) => a + Math.max(0, data.goalSets - c), 0);
+    const C = 2 * Math.PI * 30;
+    const head = {none: '今日はまだ記録がありません', partial: `クリアまで あと${toClear}セット`, clear: '今日はクリアです', goal: '今日の目標を達成しました'}[status];
+    const subt = {none: `全種目${data.clearSets}セットでクリア`, partial: `目標まで あと${toGoal}セット`, clear: `目標の${data.goalSets}セットまで あと${toGoal}セット`, goal: 'おつかれさまでした。次回は逆のセットです'}[status];
+    h += `<div class="card summary">
+      <div class="ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="var(--pale)" stroke-width="9"/>
+        <circle cx="36" cy="36" r="30" fill="none" stroke="var(--teal)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * done / total} ${C}"/>
+        ${extra ? `<circle cx="36" cy="36" r="30" fill="none" stroke="var(--hot)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * Math.min(1, extra / total)} ${C}"/>` : ''}</svg>
+        <div class="t">${done}/${total}${extra ? `<i>+${extra}</i>` : ''}</div></div>
+      <div class="sp"><div class="head" style="color:${status === 'goal' ? 'var(--hot)' : status === 'clear' ? 'var(--good)' : 'inherit'}">${head}</div><div class="sub">${subt}</div></div>
+      </div>`;
+  }
+
+  for (const ex of exs) {
+    const sets = logsOn(k, ex.id);
+    const sug = sets.length ? null : suggestion(ex, k);
+    const dk = `${k}:${ex.id}`;
+    if (!draft[dk]) draft[dk] = {reps: sug ? sug.reps : ex.targetReps, weight: sug ? sug.weight : ex.weight};
+    const d = draft[dk];
+    const mark = sets.length >= data.goalSets ? '<span style="color:var(--hot)">🔥</span>' : sets.length >= data.clearSets ? '<span class="ok">✔︎</span>' : '';
+    h += `<div class="card ex">
+      <h3>${esc(ex.name)} ${mark}</h3>
+      <div class="meta">目標 ${ex.targetReps}回${ex.perSide ? '（左右それぞれ）' : ''}・${wText(ex.weight)}</div>
+      ${dotsHTML(sets.length)}
+      <div class="steps">
+        <div class="stepper"><button data-step="reps" data-d="-1" data-ex="${ex.id}">−</button><span>${d.reps}回</span><button data-step="reps" data-d="1" data-ex="${ex.id}">＋</button></div>
+        <div class="stepper"><button data-step="weight" data-d="-1" data-ex="${ex.id}">−</button><span>${wText(d.weight)}</span><button data-step="weight" data-d="1" data-ex="${ex.id}">＋</button></div>
+      </div>
+      <button class="btn done ${sets.length >= data.clearSets ? 'deep' : ''}" data-done="${ex.id}">1セット完了</button>
+      <div class="row"><button class="undo" data-undo="${ex.id}" ${sets.length ? '' : 'disabled'}>1つ取り消す</button><span class="sp"></span></div>
+      ${sets.length ? `<div class="reps">${sets.map(s => `${s.reps}回`).join('・')}</div>` : ''}
+      ${sug ? `<div class="sug">↑ ${esc(sug.msg)}</div>` : ''}
+      <div class="note">${esc(ex.tip || '')}</div>
+    </div>`;
+  }
+  return h;
+}
+
+function viewHistory() {
+  const now = new Date(), ws = weekStart(now), ms = new Date(now.getFullYear(), now.getMonth(), 1), tm = addDays(new Date(now.getFullYear(), now.getMonth(), now.getDate()), 1);
+  const w = trainedSplit(ws, tm), m = trainedSplit(ms, tm);
+  const clearDays = [...new Set(data.logs.map(l => keyOf(new Date(l.date))))].filter(k => ['clear', 'goal'].includes(statusFor(k))).length;
+  const z7 = snackZero7();
+  let h = `<h1>記録</h1><div class="tiles">
+    <div class="tile"><div class="k">今週</div><div class="v ${w.planned >= data.weeklyGoal ? 'g' : ''}">${w.planned}/${data.weeklyGoal}回${w.bonus ? `<small>+${w.bonus}</small>` : ''}</div></div>
+    <div class="tile"><div class="k">今月</div><div class="v">${m.planned}回${m.bonus ? `<small>+${m.bonus}</small>` : ''}</div></div>
+    <div class="tile"><div class="k">クリアした日</div><div class="v">${clearDays}日</div></div>
+    <div class="tile"><div class="k">お菓子ゼロ（直近7日）</div><div class="v ${z7 >= 5 ? 'g' : ''}">${z7}/7日</div></div></div>`;
+
+  // 毎日の記録（12週）
+  const weeks = 12, start = addDays(weekStart(now), -7 * (weeks - 1)), tk = todayKey();
+  let cols = `<div class="col">${['月', '火', '水', '木', '金', '土', '日'].map(x => `<div class="dn">${x}</div>`).join('')}</div>`;
+  for (let i = 0; i < weeks; i++) {
+    let c = '';
+    for (let j = 0; j < 7; j++) {
+      const dk = keyOf(addDays(start, i * 7 + j)), st = statusFor(dk), rest = isRest(dk), fut = dk > tk;
+      const bg = fut ? 'transparent' : (rest && st === 'none') ? 'transparent' : STATUS[st].color;
+      c += `<div class="cell ${rest && st === 'none' ? 'rest' : ''} ${dk === selected ? 'sel' : ''}" data-sel="${fut ? '' : dk}" style="background:${bg};${st === 'partial' ? 'color:var(--deep)' : ''}">${st !== 'none' ? kindFor(dk).toUpperCase() : ''}${rest && st !== 'none' ? '<span class="b"></span>' : ''}</div>`;
+    }
+    cols += `<div class="col">${c}</div>`;
+  }
+  h += `<div class="card"><h2>毎日の記録（12週間）</h2><div class="heat">${cols}</div>
+    <div class="legend">${['partial', 'clear', 'goal'].map(s => `<span><i style="background:${STATUS[s].color}"></i>${STATUS[s].label}</span>`).join('')}
+    ${data.restWeekdays.length ? '<span><i style="border:1px dashed var(--muted)"></i>休みの日</span><span><i style="background:var(--bonus);border-radius:50%"></i>休みの日にやった</span>' : ''}</div></div>`;
+
+  // お菓子（4週間）
+  const cs = addDays(weekStart(now), -21);
+  let cal = ['月', '火', '水', '木', '金', '土', '日'].map(x => `<div class="h">${x}</div>`).join('');
+  for (let i = 0; i < 28; i++) {
+    const d = addDays(cs, i), dk = keyOf(d), lv = data.snacks[dk];
+    cal += `<div class="c ${lv ? 'on' : ''}" data-sel="${dk > tk ? '' : dk}" style="${lv ? `background:${SNACK[lv].color}` : dk > tk ? 'opacity:.35' : ''}${dk === selected ? ';outline:2px solid var(--accent)' : ''}">${d.getDate()}</div>`;
+  }
+  const st = snackStreak();
+  h += `<div class="card"><div class="row"><h2 style="margin:0">お菓子（4週間）</h2><span class="sp"></span>${st ? `<b class="ok" style="font-size:13px">ゼロ 連続${st}日</b>` : ''}</div>
+    <div class="cal" style="margin-top:10px">${cal}</div>
+    <div class="legend">${Object.values(SNACK).map(s => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('')}<span>夜食とプロテインは含めない</span></div></div>`;
+
+  // 選んだ日
+  const sl = logsOn(selected), sk = kindFor(selected), ss = statusFor(selected);
+  h += `<div class="card"><div class="row" style="flex-wrap:wrap"><b style="font-size:17px;color:var(--deep)">${dayLabel(selected)}</b>
+    ${sl.length ? `<span class="badge" style="background:${STATUS[ss].color};${ss === 'partial' ? 'color:var(--deep)' : ''}">${STATUS[ss].label}</span>${isRest(selected) ? '<span class="badge" style="background:var(--bonus)">プラスα</span>' : ''}` : isRest(selected) ? '<span class="sub">休みの日</span>' : ''}</div>
+    <div class="row" style="margin:8px 0"><span class="sub">お菓子</span><span class="sp"></span>${snackButtons(selected, true)}</div>`;
+  if (!sl.length) h += '<div class="sub">この日の筋トレの記録はありません</div>';
+  else {
+    h += `<div class="sub" style="margin-bottom:4px">${sk === 'a' ? 'A 上半身と腹筋' : 'B 下半身'}</div>`;
+    for (const l of sl) {
+      const ex = exById(l.ex);
+      h += `<div class="lrow"><span class="nm">${timeLabel(l.date)}　${esc(ex ? ex.name : l.ex)}</span><span class="v">${wText(l.weight)} × ${l.reps}回</span><button class="del" data-del="${l.id}">削除</button></div>`;
+    }
+  }
+  h += '</div>';
+
+  // 体重
+  const pts = data.bodyLogs.filter(b => b.weight != null && dateOf(b.day) >= addDays(now, -60));
+  h += `<div class="card"><h2>体重（60日）</h2>${pts.length < 2 ? '<div class="sub">今日の画面で朝の体重を記録すると、点と7日平均の線が出ます</div>' : chartSVG(pts.map(b => [dateOf(b.day), b.weight]), pts.map(b => [dateOf(b.day), weightAvg(b.day)]).filter(p => p[1] != null), 'kg')}</div>`;
+
+  // 伸び
+  const ex = exById(chartEx) || data.exercises[0];
+  const byDay = {};
+  data.logs.filter(l => l.ex === ex.id).forEach(l => { const dk = keyOf(new Date(l.date)); (byDay[dk] = byDay[dk] || []).push(l); });
+  const byReps = ex.progress === 'reps';
+  const ep = Object.keys(byDay).sort().map(dk => [dateOf(dk), byReps ? Math.max(...byDay[dk].map(l => l.reps)) : Math.max(...byDay[dk].map(l => l.weight))]);
+  h += `<div class="card"><div class="row"><h2 style="margin:0">伸び</h2><span class="sp"></span>
+    <select id="chartEx">${[...exercisesOf('a'), ...exercisesOf('b')].map(e => `<option value="${e.id}" ${e.id === ex.id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
+    ${ep.length < 2 ? `<div class="sub" style="margin-top:10px">記録が2日分たまると、その日の${byReps ? '最大回数' : '最大の重さ'}が線で出ます</div>` : chartSVG(null, ep, byReps ? '回' : 'kg')}</div>`;
+  return h;
+}
+
+function chartSVG(points, line, unit) {
+  const all = [...(points || []), ...line];
+  const xs = all.map(p => +p[0]), ys = all.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs) || x0 + 1;
+  let y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if (y1 - y0 < 1) { y0 -= 0.5; y1 += 0.5; }
+  const W = 320, H = 170, L = 34, R = 8, T = 10, B = 22;
+  const X = x => L + (W - L - R) * (x1 === x0 ? 0.5 : (+x - x0) / (x1 - x0));
+  const Y = y => T + (H - T - B) * (1 - (y - y0) / (y1 - y0));
+  const fmt = v => (Math.abs(y1 - y0) < 5 ? v.toFixed(1) : Math.round(v));
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}">`;
+  for (const v of [y0, (y0 + y1) / 2, y1]) s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L - 4}" y="${Y(v) + 4}" font-size="10" text-anchor="end" fill="var(--muted)">${fmt(v)}</text>`;
+  const d0 = new Date(x0), d1 = new Date(x1);
+  s += `<text x="${L}" y="${H - 6}" font-size="10" fill="var(--muted)">${d0.getMonth() + 1}/${d0.getDate()}</text><text x="${W - R}" y="${H - 6}" font-size="10" text-anchor="end" fill="var(--muted)">${d1.getMonth() + 1}/${d1.getDate()}</text>`;
+  if (points) s += points.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3" fill="var(--teal)" opacity=".45"/>`).join('');
+  if (line.length) s += `<polyline fill="none" stroke="var(--deep)" stroke-width="2.5" stroke-linejoin="round" points="${line.map(p => `${X(p[0])},${Y(p[1])}`).join(' ')}"/>` +
+    (points ? '' : line.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.5" fill="var(--deep)"/>`).join(''));
+  s += `<text x="2" y="${T + 2}" font-size="10" fill="var(--muted)">${unit}</text></svg>`;
+  if (points) s += '<div class="note">点は毎朝の体重、線は7日平均。1日ごとの上下は水分なので、線の向きだけを見ます</div>';
+  return s;
+}
+
+function viewSettings() {
+  const mini = (key, label) => `<div class="mini"><button data-set="${key}" data-d="-1">−</button><span>${label}</span><button data-set="${key}" data-d="1">＋</button></div>`;
+  let h = `<h1>種目と目標</h1><div class="card">
+    <div class="set"><span>クリアのセット数</span>${mini('clearSets', data.clearSets)}</div>
+    <div class="set"><span>目標のセット数</span>${mini('goalSets', data.goalSets)}</div>
+    <div class="set"><span>週の回数の目標</span>${mini('weeklyGoal', data.weeklyGoal + '回')}</div>
+    <div class="set" style="display:block"><span>休みの曜日</span><div class="wd" style="justify-content:space-between;margin-top:8px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button data-wd="${d}" class="${data.restWeekdays.includes(d) ? 'on' : ''}">${WD[d]}</button>`).join('')}</div></div>
+    <div class="note">休みの曜日を選ぶと、その日は休みの日として表示され、やった分はプラスαとして別に数えます。決めない場合は空のままで大丈夫です。</div></div>`;
+  for (const kind of ['a', 'b']) {
+    h += `<div class="card"><h2>${kind === 'a' ? 'A 上半身と腹筋' : 'B 下半身'}</h2>`;
+    for (const ex of exercisesOf(kind)) {
+      h += `<div class="set" style="display:block"><input class="exname" data-name="${ex.id}" value="${esc(ex.name)}">
+        <div class="row"><span class="sub">回数</span>${mini('reps:' + ex.id, ex.targetReps + '回')}<span class="sp"></span><span class="sub">重さ</span>${mini('weight:' + ex.id, wText(ex.weight))}</div></div>`;
+    }
+    h += '</div>';
+  }
+  h += `<div class="card"><h2>記録のバックアップ</h2>
+    <div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" id="exportBtn">記録を書き出す</button>
+    <label class="btn ghost" style="display:inline-block">書き出した記録を読み込む<input type="file" id="importFile" accept="application/json,.json" hidden></label></div>
+    <div class="note">記録はこのスマホの中だけに保存されています。機種変更の前に書き出して、新しいスマホで読み込んでください。</div></div>
+    <div class="note" style="text-align:center">ダンベルは${data.minWeight}kgから${data.weightStep}kg刻み。0は自重です。</div>`;
+  return h;
+}
+
+// ===== 操作 =====
+document.addEventListener('click', e => {
+  const t = e.target.closest('button,[data-sel]');
+  if (!t) return;
+  const ds = t.dataset;
+  if (ds.tab) { tab = ds.tab; window.scrollTo(0, 0); render(); return; }
+  if (ds.kind) { data.dayKinds[todayKey()] = ds.kind; save(); render(); return; }
+  if (ds.snack) { toggleSnack(ds.day, ds.snack); render(); return; }
+  if (ds.step) {
+    const ex = exById(ds.ex), d = draft[`${todayKey()}:${ex.id}`], n = +ds.d;
+    if (ds.step === 'reps') d.reps = Math.max(1, Math.min(50, d.reps + n));
+    else d.weight = n > 0 ? Math.min(40, nextWeight(d.weight)) : (d.weight === 0 ? 0 : prevWeight(d.weight));
+    render(); return;
+  }
+  if (ds.done) {
+    const ex = exById(ds.done), dk = `${todayKey()}:${ex.id}`, d = draft[dk];
+    addSet(ex, d.reps, d.weight);
+    const c = logsOn(todayKey(), ex.id).length;
+    toast(c === data.clearSets ? `${ex.name} クリア！` : c === data.goalSets ? `${ex.name} 目標達成！` : `${c}セット目を記録しました`);
+    if (navigator.vibrate) navigator.vibrate(15);
+    render(); return;
+  }
+  if (ds.undo) { undoLast(exById(ds.undo)); render(); return; }
+  if (ds.sel) { selected = ds.sel; render(); return; }
+  if (ds.del) {
+    if (!t.classList.contains('arm')) { t.classList.add('arm'); t.textContent = 'もう一度押して削除'; setTimeout(() => { t.classList.remove('arm'); t.textContent = '削除'; }, 3000); return; }
+    data.logs = data.logs.filter(l => l.id !== ds.del); save(); render(); return;
+  }
+  if (ds.wd) {
+    const d = +ds.wd;
+    data.restWeekdays = data.restWeekdays.includes(d) ? data.restWeekdays.filter(x => x !== d) : [...data.restWeekdays, d];
+    save(); render(); return;
+  }
+  if (ds.set) {
+    const n = +ds.d, [k, id] = ds.set.split(':');
+    if (k === 'clearSets') { data.clearSets = Math.max(1, Math.min(5, data.clearSets + n)); data.goalSets = Math.max(data.goalSets, data.clearSets); }
+    else if (k === 'goalSets') data.goalSets = Math.max(data.clearSets, Math.min(6, data.goalSets + n));
+    else if (k === 'weeklyGoal') data.weeklyGoal = Math.max(1, Math.min(7, data.weeklyGoal + n));
+    else if (k === 'reps') { const ex = exById(id); ex.targetReps = Math.max(1, Math.min(50, ex.targetReps + n)); }
+    else if (k === 'weight') { const ex = exById(id); ex.weight = n > 0 ? Math.min(40, nextWeight(ex.weight)) : (ex.weight === 0 ? 0 : prevWeight(ex.weight)); }
+    Object.keys(draft).forEach(x => delete draft[x]);
+    save(); render(); return;
+  }
+  if (t.id === 'saveBody') {
+    const v = parseFloat(($('#w').value || '').replace(',', '.'));
+    setBody(todayKey(), isNaN(v) ? null : v, null);
+    toast(isNaN(v) ? '体重の記録を消しました' : '体重を記録しました');
+    render(); return;
+  }
+  if (t.id === 'exportBtn') { exportData(); return; }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'chartEx') { chartEx = e.target.value; render(); }
+  if (e.target.dataset.name) { const ex = exById(e.target.dataset.name); ex.name = e.target.value.trim() || ex.name; save(); }
+  if (e.target.id === 'importFile') importData(e.target.files[0]);
+});
+
+async function exportData() {
+  const name = `自宅筋トレ記録-${todayKey()}.json`;
+  const blob = new Blob([JSON.stringify(data, null, 1)], {type: 'application/json'});
+  const file = new File([blob], name, {type: 'application/json'});
+  try {
+    if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: name}); return; }
+  } catch (e) { if (e.name === 'AbortError') return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function importData(f) {
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!Array.isArray(d.logs) || !Array.isArray(d.exercises)) throw new Error();
+      data = Object.assign(structuredClone(INITIAL), d); save(); toast(`読み込みました（${data.logs.length}セット）`); render();
+    } catch (e) { toast('このファイルは読み込めませんでした'); }
+  };
+  r.readAsText(f);
+}
+
+// 画面確認用のサンプル（?demo を付けたときだけ。保存はしない）
+function demoData() {
+  const d = structuredClone(INITIAL), t = new Date();
+  const at = (n, h) => { const x = addDays(t, -n); x.setHours(h, 0, 0, 0); return x.toISOString(); };
+  const plan = [[13, 'a'], [11, 'b'], [9, 'a'], [6, 'b'], [4, 'a'], [2, 'b'], [0, 'a']];
+  for (const [n, kind] of plan) for (const ex of d.exercises.filter(e => e.kind === kind)) {
+    const c = n === 0 ? (ex.id === 'row' ? 3 : ex.id === 'kneeroller' ? 1 : 2) : n === 4 ? 3 : 2;
+    for (let i = 0; i < c; i++) d.logs.push({id: uid(), date: at(n, 20), ex: ex.id, reps: ex.targetReps, weight: ex.weight + (n < 7 && ex.progress === 'weight' && ex.weight ? 1 : 0)});
+  }
+  for (let i = 20; i >= 0; i--) d.bodyLogs.push({day: keyOf(addDays(t, -i)), weight: +(56.4 - i * 0.02 + Math.sin(i) * 0.3).toFixed(1)});
+  ['none', 'none', 'little', 'none', 'much', 'none', 'none', 'none', 'none'].forEach((lv, i) => d.snacks[keyOf(addDays(t, -i - 1))] = lv);
+  return d;
+}
+
+data = load();
+render();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
+// 日付が変わったら今日の画面を新しくする
+let lastDay = todayKey();
+setInterval(() => { if (todayKey() !== lastDay) { lastDay = todayKey(); selected = lastDay; render(); } }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && todayKey() !== lastDay) { lastDay = todayKey(); selected = lastDay; render(); } });
+</script>
+</body>
+</html>
