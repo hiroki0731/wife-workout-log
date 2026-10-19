@@ -827,7 +827,7 @@ async function connectSync() {
   sync = {url: c.url, key: c.key}; saveSync();
   try {
     const list = (await callSync({action: 'list'})).list;
-    if (list.length && !hasRecords(data)) {
+    if (list.some(r => r.records > 0) && !hasRecords(data)) {
       // このスマホに記録がなく、写しがある：上書きせず、戻す日を選んでもらう
       restoreList = list; render(); toast('連携しました。戻したい日を選んでください'); return;
     }
