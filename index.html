@@ -15,15 +15,20 @@
 <style>
 /* 画面：上にタブの中身、下に3つのタブ（今日・記録・設定）。スマホ縦持ちが前提 */
 :root{
-  --teal:#087EA5;--deep:#003E52;--pale:#e6f3f7;--accent:#FD9191;--good:#2e9e6b;--hot:#E8505B;--bonus:#F0A028;
-  --ink:#1f2a30;--muted:#66767d;--line:#dde8ec;--ground:#f3f7f8;--paper:#fff;--soft:#eef2f3;
+  --teal:#087EA5;--deep:#003E52;--pale:#EAF5F8;--light:#9CCBDB;--accent:#FD9191;--good:#2e9e6b;--hot:#E8505B;--bonus:#F0A028;--gold:#FFCE3C;
+  --ink:#243038;--muted:#5b6b73;--line:#d7e6ec;--ground:#F6FAFB;--paper:#fff;--soft:#ECF2F4;
   --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
 }
 @media (prefers-color-scheme: dark){:root{
-  --teal:#2b9cc2;--deep:#cfe9f2;--pale:#15323c;--ink:#e3ecef;--muted:#9fb1b8;--line:#28414a;
+  --teal:#2b9cc2;--deep:#cfe9f2;--pale:#15323c;--light:#2d5f70;--ink:#e3ecef;--muted:#9fb1b8;--line:#28414a;
   --ground:#0d181c;--paper:#152328;--soft:#1c2d33;color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+html{background:var(--ground)}
+body{margin:0;color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+/* クリアした日は黄色、目標達成の日は黄色からオレンジ・ピンクの背景（白い札の後ろだけに出る） */
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .4s}
+body.day-clear::before{opacity:1;background:linear-gradient(135deg,rgba(255,206,60,.32),rgba(255,206,60,.14) 55%,rgba(240,160,40,.08))}
+body.day-goal::before{opacity:1;background:linear-gradient(135deg,rgba(255,206,60,.42),rgba(240,160,40,.24) 55%,rgba(253,145,145,.30))}
 button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
 input{font:inherit;color:inherit}
 #app{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 86px)}
@@ -35,7 +40,7 @@ input{font:inherit;color:inherit}
 h1{font-size:24px;margin:0;color:var(--deep);font-weight:800}
 .sub{font-size:13px;color:var(--muted)}
 .sub.rest{color:var(--bonus);font-weight:700}
-.card{background:var(--paper);border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,40,55,.06)}
+.card{background:var(--paper);border-radius:14px;padding:14px;margin:12px 0;border:1px solid var(--line)}
 .row{display:flex;align-items:center;gap:8px}
 .sp{flex:1}
 .seg{display:flex;background:var(--soft);border-radius:10px;padding:3px;margin-top:10px}
@@ -54,7 +59,7 @@ h1{font-size:24px;margin:0;color:var(--deep);font-weight:800}
 .banner .ic{font-size:26px}
 .banner.bonus{background:color-mix(in srgb,var(--bonus) 14%,var(--paper));border:1px solid var(--bonus)}
 .banner b{font-size:16px}
-.summary{display:flex;gap:14px;align-items:center;border:1px solid var(--teal);background:color-mix(in srgb,var(--teal) 6%,var(--paper))}
+.summary{display:flex;gap:14px;align-items:center}
 .ring{position:relative;width:72px;height:72px;flex:none}
 .ring svg{width:72px;height:72px;transform:rotate(-90deg)}
 .ring .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-variant-numeric:tabular-nums;font-size:15px;line-height:1.15}
@@ -75,12 +80,12 @@ h1{font-size:24px;margin:0;color:var(--deep);font-weight:800}
 .stepper button{width:40px;height:40px;border:0;border-radius:8px;background:var(--paper);font-size:22px;font-weight:700;color:var(--teal)}
 .stepper span{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
 .done{width:100%;padding:13px;font-size:16px}
-.undo{border:0;background:none;color:var(--teal);font-size:13px;padding:8px 0 0}
-.undo:disabled{color:var(--muted);opacity:.5}
-.sug{margin-top:8px;font-size:13px;background:color-mix(in srgb,var(--accent) 30%,var(--paper));border-radius:8px;padding:7px 10px;color:var(--deep);font-weight:600}
+.undo{border:0;background:none;color:var(--muted);font-size:13px;padding:8px 0 0}
+.undo:disabled{display:none}
+.sug{margin-top:8px;font-size:13px;background:color-mix(in srgb,var(--accent) 22%,var(--paper));border-radius:8px;padding:7px 10px;color:var(--deep);font-weight:600}
 .reps{font-size:13px;color:var(--muted);margin-top:6px}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.tile{background:var(--pale);border-radius:12px;padding:12px}
+.tile{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px}
 .tile .k{font-size:12px;color:var(--muted)}
 .tile .v{font-size:22px;font-weight:800;color:var(--deep);font-variant-numeric:tabular-nums}
 .tile .v.g{color:var(--good)}
@@ -123,6 +128,27 @@ select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--lin
 .note{font-size:12px;color:var(--muted);margin-top:8px}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 80px);transform:translateX(-50%);background:var(--deep);color:var(--paper);padding:9px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+/* 日付の行と、前の日に戻したとき */
+.dayhead{display:flex;align-items:center;gap:4px}
+.dayhead .nav{width:36px;height:40px;border:0;background:none;color:var(--teal);font-size:26px;font-weight:700;padding:0;flex:none}
+.dayhead .nav:disabled{color:var(--line)}
+.past{display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--accent) 18%,var(--paper));border:1px solid var(--accent);border-radius:14px;padding:10px 12px;margin-top:10px;font-size:13px;font-weight:700;color:var(--deep)}
+.past .btn{padding:6px 10px;font-size:13px;white-space:nowrap}
+/* 体重・お菓子・プロテインを1枚にまとめた札 */
+.habits{padding:0 14px}
+.hrow{display:flex;align-items:center;gap:8px;padding:11px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.hrow:first-child{border-top:0}
+.hrow .lbl{width:68px;flex:none}
+.hrow .st{font-size:13px;font-weight:800;white-space:nowrap}
+.hnote{font-size:12px;color:var(--muted);margin:-6px 0 0 76px;padding-bottom:10px}
+.hnote.ok{color:var(--good);font-weight:800}
+/* お祝い */
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+.celebrate{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%) scale(.3);opacity:0;font-size:40px;font-weight:900;color:var(--teal);
+  text-shadow:0 0 14px #fff,0 0 4px #fff;pointer-events:none;z-index:31;white-space:nowrap;animation:pop .5s cubic-bezier(.3,1.6,.5,1) forwards}
+.celebrate.goal{color:var(--hot)}
+.celebrate.out{transition:opacity .6s,transform .6s;opacity:0 !important;transform:translate(-50%,-50%) scale(.6) !important}
+@keyframes pop{to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 </style>
 </head>
 <body>
@@ -154,7 +180,7 @@ const INITIAL = {
       tip:'肩甲骨をベンチに乗せ、腰にタオルを挟んでダンベルを置く'},
   ],
   logs: [], dayKinds: {}, clearSets: 2, goalSets: 3, weightStep: 1, minWeight: 5, weeklyGoal: 3,
-  restWeekdays: [], bodyLogs: [], snacks: {},
+  restWeekdays: [], bodyLogs: [], snacks: {}, protein: {}, proteinClear: 1,
 };
 
 function load() {
@@ -214,7 +240,7 @@ function statusFor(k) {
 }
 const STATUS = {
   none: {label: '記録なし', color: 'var(--soft)'},
-  partial: {label: '途中', color: 'color-mix(in srgb,var(--teal) 35%,var(--paper))'},
+  partial: {label: '途中', color: 'var(--light)'},
   clear: {label: 'クリア', color: 'var(--teal)'},
   goal: {label: '目標達成', color: 'var(--hot)'},
 };
@@ -236,14 +262,24 @@ function suggestion(ex, k) {
   const w = nextWeight(Math.max(ex.weight, ...sets.map(s => s.weight)));
   return {reps: ex.targetReps, weight: w, msg: `前回は全セット達成。今日は${wText(w)}を入れてあります`};
 }
-function addSet(ex, reps, weight) {
-  data.logs.push({id: uid(), date: new Date().toISOString(), ex: ex.id, reps, weight});
+// 記録する時刻：今日なら今、前の日なら、その日の今と同じ時刻
+function logDateFor(k) {
+  const now = new Date();
+  if (k === keyOf(now)) return now;
+  const d = dateOf(k); d.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+  return d;
+}
+const RANK = {none: 0, partial: 1, clear: 2, goal: 3};
+function addSet(ex, reps, weight, k = todayKey()) {
+  const before = statusFor(k);
+  data.logs.push({id: uid(), date: logDateFor(k).toISOString(), ex: ex.id, reps, weight});
   if (ex.progress === 'reps' && reps > ex.targetReps) ex.targetReps = reps;
   ex.weight = weight;
   save();
+  const after = statusFor(k);
+  return RANK[after] > RANK[before] && RANK[after] >= RANK.clear ? after : null;   // クリアや目標達成に届いた瞬間ならその状態
 }
-function undoLast(ex) {
-  const k = todayKey();
+function undoLast(ex, k = todayKey()) {
   const mine = data.logs.filter(l => l.ex === ex.id && keyOf(new Date(l.date)) === k);
   const last = mine[mine.length - 1];
   if (last) { data.logs = data.logs.filter(l => l !== last); save(); }
@@ -278,11 +314,46 @@ function snackStreak() {
   while (data.snacks[keyOf(d)] === 'none') { n++; d = addDays(d, -1); }
   return n;
 }
-const snackZero7 = () => [...Array(7)].filter((_, i) => data.snacks[keyOf(addDays(new Date(), -i))] === 'none').length;
+// 直近7日のお菓子ゼロの日数（今日が未記録なら昨日までの7日で数える）
+function snackZero7() {
+  const end = data.snacks[todayKey()] ? new Date() : addDays(new Date(), -1);
+  return [...Array(7)].filter((_, i) => data.snacks[keyOf(addDays(end, -i))] === 'none').length;
+}
+// プロテイン：朝・昼・夜。決めた回数でクリア、それより1回多ければ完璧
+const PTIMES = [['morning', '朝'], ['noon', '昼'], ['night', '夜']];
+const proteinOn = k => data.protein[k] || [];
+function toggleProtein(k, t) {
+  const cur = new Set(proteinOn(k));
+  if (cur.has(t)) cur.delete(t); else cur.add(t);
+  const arr = PTIMES.map(p => p[0]).filter(x => cur.has(x));
+  if (arr.length) data.protein[k] = arr; else delete data.protein[k];
+  save();
+}
+function proteinStatus(k) {
+  const n = proteinOn(k).length, c = data.proteinClear;
+  if (!n) return 'none';
+  if (n > c) return 'perfect';
+  return n >= c ? 'clear' : 'partial';
+}
+const PSTATUS = {
+  none: {label: '未記録', color: 'var(--soft)'},
+  partial: {label: '途中', color: 'var(--light)'},
+  clear: {label: 'クリア', color: 'var(--teal)'},
+  perfect: {label: '完璧', color: 'var(--hot)'},
+};
+const proteinOK = k => ['clear', 'perfect'].includes(proteinStatus(k));
+// 直近7日のプロテインのクリア日数（今日がまだクリア前なら昨日までの7日で数える）
+function proteinClear7() {
+  const end = proteinOK(todayKey()) ? new Date() : addDays(new Date(), -1);
+  return [...Array(7)].filter((_, i) => proteinOK(keyOf(addDays(end, -i)))).length;
+}
 
 // ===== 画面 =====
 let tab = new URLSearchParams(location.search).get('tab') || 'today';
 let selected = todayKey();
+// 今日の画面で表示している日（前の日に戻して記録できる）。確認用：?day=-1 で前の日から開く
+let viewDay = keyOf(addDays(new Date(), Math.min(0, +(new URLSearchParams(location.search).get('day') || 0))));
+const isToday = () => viewDay === todayKey();
 let chartEx = 'hipthrust';
 const draft = {};   // 種目カードの回数と重さ（押すまでの一時的な値）
 const $ = s => document.querySelector(s);
@@ -301,6 +372,9 @@ function renderTabs() {
 function render() {
   renderTabs();
   $('#app').innerHTML = tab === 'today' ? viewToday() : tab === 'history' ? viewHistory() : viewSettings();
+  const st = tab === 'today' ? statusFor(viewDay) : 'none';
+  document.body.classList.toggle('day-clear', st === 'clear');
+  document.body.classList.toggle('day-goal', st === 'goal');
 }
 
 function dotsHTML(count) {
@@ -313,34 +387,49 @@ function dotsHTML(count) {
   }
   return `<div class="dots">${h}<span class="sub" style="margin-left:4px">${count}/${data.goalSets}</span></div>`;
 }
+function proteinButtons(k, sm) {
+  const on = proteinStatus(k) === 'perfect' ? 'var(--hot)' : 'var(--teal)', cur = proteinOn(k);
+  return PTIMES.map(([t, l]) =>
+    `<button class="pill ${sm ? 'sm' : ''}" data-protein="${t}" data-day="${k}" style="${cur.includes(t) ? `background:${on};color:#fff` : ''}">${l}</button>`).join('');
+}
+function proteinBadge(k) {
+  const st = proteinStatus(k), left = data.proteinClear - proteinOn(k).length;
+  if (st === 'partial') return `<span class="st" style="color:var(--muted)">あと${left}回でクリア</span>`;
+  if (st === 'clear') return '<span class="st" style="color:var(--teal)">クリア</span>';
+  if (st === 'perfect') return '<span class="st" style="color:var(--hot)">完璧</span>';
+  return '';
+}
 function snackButtons(k, sm) {
   return Object.entries(SNACK).map(([lv, s]) =>
     `<button class="pill ${sm ? 'sm' : ''}" data-snack="${lv}" data-day="${k}" style="${data.snacks[k] === lv ? `background:${s.color};color:#fff` : ''}">${s.label}</button>`).join('');
 }
 
 function viewToday() {
-  const k = todayKey();
+  const k = viewDay, today = isToday();
   const kind = kindFor(k), exs = exercisesOf(kind), status = statusFor(k), logs = logsOn(k), rest = isRest(k);
   const b = bodyOn(k) || {};
-  const yk = keyOf(addDays(new Date(), -1));
   const streak = snackStreak();
-  let h = `<h1>${dayLabel(k)}</h1>
-    <div class="sub ${rest ? 'rest' : ''}">${rest ? '今日は休みの日' : `${data.clearSets}セットでクリア、${data.goalSets}セットで目標達成`}</div>
+  let h = `<div class="dayhead"><button class="nav" data-move="-1" aria-label="前の日">‹</button>
+      <div class="sp"><h1>${dayLabel(k)}</h1>
+      <div class="sub ${rest ? 'rest' : ''}">${rest ? `${today ? '今日' : 'この日'}は休みの日` : `${data.clearSets}セットでクリア、${data.goalSets}セットで目標達成`}</div></div>
+      <button class="nav" data-move="1" aria-label="次の日" ${today ? 'disabled' : ''}>›</button></div>
+    ${today ? '' : `<div class="past"><span class="sp">${dayLabel(k)}の記録を付けています。ここで押した分はこの日の記録になります</span><button class="btn" data-move="0">今日に戻る</button></div>`}
     <div class="seg">${['a', 'b'].map(x => `<button data-kind="${x}" class="${kind === x ? 'on' : ''}">${x === 'a' ? 'A 上半身と腹筋' : 'B 下半身'}</button>`).join('')}</div>`;
 
-  h += `<div class="card"><div class="row">
-      <span class="lbl">朝の体重</span><input class="num" id="w" inputmode="decimal" placeholder="56.0" value="${b.weight ?? ''}"><span class="sub">kg</span>
-      <span class="sp"></span><button class="btn ghost" id="saveBody">${b.weight != null ? '更新' : '記録'}</button>
-    </div>${b.weight != null ? `<div class="note ok">記録しました${weightAvg(k) ? `　7日平均 ${weightAvg(k).toFixed(1)}kg` : ''}</div>` : ''}</div>`;
-
-  h += `<div class="card"><div class="row"><span class="lbl">今日のお菓子</span><span class="sp"></span>${snackButtons(k)}</div>
-    ${!data.snacks[yk] ? `<div class="row" style="margin-top:8px"><span class="sub">昨日は</span><span class="sp"></span>${snackButtons(yk, true)}</div>` : ''}
-    ${streak ? `<div class="note ok" style="font-weight:800">お菓子ゼロ 連続${streak}日</div>` : ''}</div>`;
+  const bodyLabel = b.weight == null ? '記録' : '更新';
+  h += `<div class="card habits">
+    <div class="hrow"><span class="lbl">朝の体重</span><input class="num" id="w" inputmode="decimal" enterkeyhint="done" placeholder="56.0" value="${b.weight ?? ''}"><span class="sub">kg</span>
+      <button class="btn ghost" id="saveBody">${bodyLabel}</button></div>
+    ${b.weight != null && weightAvg(k) ? `<div class="hnote">7日平均 ${weightAvg(k).toFixed(1)}kg</div>` : ''}
+    <div class="hrow"><span class="lbl">お菓子</span>${snackButtons(k)}</div>
+    ${streak ? `<div class="hnote ok">ゼロ 連続${streak}日</div>` : ''}
+    <div class="hrow"><span class="lbl">プロテイン</span>${proteinButtons(k)}<span class="sp"></span>${proteinBadge(k)}</div>
+  </div>`;
 
   if (rest) {
     h += logs.length
       ? `<div class="card banner bonus"><span class="ic">＋</span><div><b style="color:var(--bonus)">休みの日にプラスαでやっています</b><div class="sub">予定の外の上乗せです。今週の回数とは別に数えます</div></div></div>`
-      : `<div class="card banner"><span class="ic">🌙</span><div><b>今日は休みの日です</b><div class="sub">やりたくなったら、下の種目はプラスαとして記録されます</div></div></div>`;
+      : `<div class="card banner"><span class="ic">🌙</span><div><b>${today ? '今日は休みの日です' : 'この日は休みの日です'}</b><div class="sub">やりたくなったら、下の種目はプラスαとして記録されます</div></div></div>`;
   }
 
   if (!(rest && !logs.length)) {
@@ -351,14 +440,16 @@ function viewToday() {
     const toClear = counts.reduce((a, c) => a + Math.max(0, data.clearSets - c), 0);
     const toGoal = counts.reduce((a, c) => a + Math.max(0, data.goalSets - c), 0);
     const C = 2 * Math.PI * 30;
-    const head = {none: '今日はまだ記録がありません', partial: `クリアまで あと${toClear}セット`, clear: '今日はクリアです', goal: '今日の目標を達成しました'}[status];
-    const subt = {none: `全種目${data.clearSets}セットでクリア`, partial: `目標まで あと${toGoal}セット`, clear: `目標の${data.goalSets}セットまで あと${toGoal}セット`, goal: 'おつかれさまでした。次回は逆のセットです'}[status];
+    const head = {none: today ? '今日はまだ記録がありません' : 'この日の記録はありません', partial: `クリアまで あと${toClear}セット`,
+      clear: today ? '今日はクリアです' : 'この日はクリアです', goal: today ? '今日の目標を達成しました' : 'この日は目標達成です'}[status];
+    const subt = {none: `全種目${data.clearSets}セットでクリア`, partial: `目標の${data.goalSets}セットまでは あと${toGoal}セット`, clear: `目標の${data.goalSets}セットまで あと${toGoal}セット`, goal: 'おつかれさまでした。次回は逆のセットです'}[status];
     h += `<div class="card summary">
-      <div class="ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="var(--pale)" stroke-width="9"/>
-        <circle cx="36" cy="36" r="30" fill="none" stroke="var(--teal)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * done / total} ${C}"/>
+      <div class="ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="var(--soft)" stroke-width="9"/>
+        ${done ? `<circle cx="36" cy="36" r="30" fill="none" stroke="var(--teal)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * done / total} ${C}"/>` : ''}
         ${extra ? `<circle cx="36" cy="36" r="30" fill="none" stroke="var(--hot)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * Math.min(1, extra / total)} ${C}"/>` : ''}</svg>
-        <div class="t">${done}/${total}${extra ? `<i>+${extra}</i>` : ''}</div></div>
-      <div class="sp"><div class="head" style="color:${status === 'goal' ? 'var(--hot)' : status === 'clear' ? 'var(--good)' : 'inherit'}">${head}</div><div class="sub">${subt}</div></div>
+        <div class="t" style="color:var(--deep)">${done}/${total}${extra ? `<i>+${extra}</i>` : ''}</div></div>
+      <div class="sp"><div class="head" style="color:${status === 'goal' ? 'var(--hot)' : status === 'clear' ? 'var(--teal)' : 'var(--deep)'}">${head}</div><div class="sub">${subt}</div></div>
+      ${rest && logs.length ? '<span class="badge" style="background:var(--bonus)">プラスα</span>' : ''}
       </div>`;
   }
 
@@ -368,7 +459,7 @@ function viewToday() {
     const dk = `${k}:${ex.id}`;
     if (!draft[dk]) draft[dk] = {reps: sug ? sug.reps : ex.targetReps, weight: sug ? sug.weight : ex.weight};
     const d = draft[dk];
-    const mark = sets.length >= data.goalSets ? '<span style="color:var(--hot)">🔥</span>' : sets.length >= data.clearSets ? '<span class="ok">✔︎</span>' : '';
+    const mark = sets.length >= data.goalSets ? '<span style="color:var(--hot)">🔥</span>' : sets.length >= data.clearSets ? '<span style="color:var(--teal)">✔︎</span>' : '';
     h += `<div class="card ex">
       <h3>${esc(ex.name)} ${mark}</h3>
       <div class="meta">目標 ${ex.targetReps}回${ex.perSide ? '（左右それぞれ）' : ''}・${wText(ex.weight)}</div>
@@ -385,6 +476,45 @@ function viewToday() {
     </div>`;
   }
   return h;
+}
+
+// クリアや目標達成に届いた瞬間に、紙吹雪を降らせて大きな文字を出す（約4秒で消える）
+function celebrate(st) {
+  const goal = st === 'goal';
+  if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { toast(goal ? '目標達成！' : '全種目クリア！'); return; }
+  const cv = document.createElement('canvas'); cv.className = 'confetti'; document.body.appendChild(cv);
+  const W = innerWidth, H = innerHeight, dpr = devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+  const colors = goal ? ['#E8505B', '#FD9191', '#F0A028', '#E8505B', '#087EA5', '#2e9e6b'] : ['#087EA5', '#2e9e6b', '#FD9191', '#F0A028', '#087EA5'];
+  const r = (a, b) => a + Math.random() * (b - a);
+  const ps = [...Array(goal ? 170 : 100)].map(() => ({x: Math.random(), delay: r(0, .9), speed: r(160, 340), drift: r(-40, 40), spin: r(-6, 6),
+    flip: r(4, 10), phase: r(0, 6.28), size: r(6, 11), color: colors[Math.floor(Math.random() * colors.length)]}));
+  const big = document.createElement('div'); big.className = 'celebrate' + (goal ? ' goal' : ''); big.textContent = goal ? '目標達成！' : '全種目クリア！';
+  document.body.appendChild(big);
+  const t0 = performance.now(), dur = 4.2;
+  (function frame(now) {
+    const t = (now - t0) / 1000;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalAlpha = Math.max(0, Math.min(1, dur - t));
+    for (const p of ps) {
+      const lt = t - p.delay;
+      if (lt <= 0) continue;
+      const y = -20 + p.speed * lt + 60 * lt * lt;
+      if (y > H + 20) continue;
+      ctx.save();
+      ctx.translate(p.x * W + p.drift * lt + Math.sin(lt * 3 + p.phase) * 14, y);
+      ctx.rotate(p.spin * lt + p.phase);
+      ctx.scale(Math.max(.15, Math.abs(Math.cos(lt * p.flip + p.phase))), 1);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size * .35, p.size, p.size * .7);
+      ctx.restore();
+    }
+    if (t < dur) requestAnimationFrame(frame); else cv.remove();
+  })(t0);
+  setTimeout(() => big.classList.add('out'), 1800);
+  setTimeout(() => big.remove(), 2600);
 }
 
 function viewHistory() {
@@ -426,11 +556,23 @@ function viewHistory() {
     <div class="cal" style="margin-top:10px">${cal}</div>
     <div class="legend">${Object.values(SNACK).map(s => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('')}<span>夜食とプロテインは含めない</span></div></div>`;
 
+  // プロテイン（4週間）
+  let pcal = ['月', '火', '水', '木', '金', '土', '日'].map(x => `<div class="h">${x}</div>`).join('');
+  for (let i = 0; i < 28; i++) {
+    const d = addDays(cs, i), dk = keyOf(d), ps = proteinStatus(dk);
+    pcal += `<div class="c ${ps !== 'none' ? 'on' : ''}" data-sel="${dk > tk ? '' : dk}" style="${ps !== 'none' ? `background:${PSTATUS[ps].color};${ps === 'partial' ? 'color:var(--deep)' : ''}` : dk > tk ? 'opacity:.35' : ''}${dk === selected ? ';outline:2px solid var(--accent)' : ''}">${d.getDate()}</div>`;
+  }
+  const p7 = proteinClear7();
+  h += `<div class="card"><div class="row"><h2 style="margin:0">プロテイン（4週間）</h2><span class="sp"></span><b style="font-size:13px;color:${p7 >= 5 ? 'var(--good)' : 'var(--muted)'}">クリア 直近7日で${p7}日</b></div>
+    <div class="cal" style="margin-top:10px">${pcal}</div>
+    <div class="legend">${['partial', 'clear', 'perfect'].map(x => `<span><i style="background:${PSTATUS[x].color}"></i>${x === 'clear' ? `クリア（${data.proteinClear}回）` : x === 'perfect' ? `完璧（${data.proteinClear + 1}回以上）` : PSTATUS[x].label}</span>`).join('')}</div></div>`;
+
   // 選んだ日
   const sl = logsOn(selected), sk = kindFor(selected), ss = statusFor(selected);
   h += `<div class="card"><div class="row" style="flex-wrap:wrap"><b style="font-size:17px;color:var(--deep)">${dayLabel(selected)}</b>
     ${sl.length ? `<span class="badge" style="background:${STATUS[ss].color};${ss === 'partial' ? 'color:var(--deep)' : ''}">${STATUS[ss].label}</span>${isRest(selected) ? '<span class="badge" style="background:var(--bonus)">プラスα</span>' : ''}` : isRest(selected) ? '<span class="sub">休みの日</span>' : ''}</div>
-    <div class="row" style="margin:8px 0"><span class="sub">お菓子</span><span class="sp"></span>${snackButtons(selected, true)}</div>`;
+    <div class="row" style="margin:8px 0"><span class="sub">お菓子</span><span class="sp"></span>${snackButtons(selected, true)}</div>
+    <div class="row" style="margin:8px 0"><span class="sub">プロテイン</span><span class="sp"></span>${proteinButtons(selected, true)}</div>`;
   if (!sl.length) h += '<div class="sub">この日の筋トレの記録はありません</div>';
   else {
     h += `<div class="sub" style="margin-bottom:4px">${sk === 'a' ? 'A 上半身と腹筋' : 'B 下半身'}</div>`;
@@ -485,6 +627,7 @@ function viewSettings() {
     <div class="set"><span>クリアのセット数</span>${mini('clearSets', data.clearSets)}</div>
     <div class="set"><span>目標のセット数</span>${mini('goalSets', data.goalSets)}</div>
     <div class="set"><span>週の回数の目標</span>${mini('weeklyGoal', data.weeklyGoal + '回')}</div>
+    <div class="set"><span>プロテインのクリア回数</span>${mini('proteinClear', data.proteinClear + '回')}</div>
     <div class="set" style="display:block"><span>休みの曜日</span><div class="wd" style="justify-content:space-between;margin-top:8px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button data-wd="${d}" class="${data.restWeekdays.includes(d) ? 'on' : ''}">${WD[d]}</button>`).join('')}</div></div>
     <div class="note">休みの曜日を選ぶと、その日は休みの日として表示され、やった分はプラスαとして別に数えます。決めない場合は空のままで大丈夫です。</div></div>`;
   for (const kind of ['a', 'b']) {
@@ -505,27 +648,38 @@ function viewSettings() {
 
 // ===== 操作 =====
 document.addEventListener('click', e => {
+  // 入力欄の外を押したら、キーボードを閉じてフォーカスを外す
+  const ae = document.activeElement;
+  if (ae && ae.matches('input') && !e.target.closest('input')) ae.blur();
   const t = e.target.closest('button,[data-sel]');
   if (!t) return;
   const ds = t.dataset;
   if (ds.tab) { tab = ds.tab; window.scrollTo(0, 0); render(); return; }
-  if (ds.kind) { data.dayKinds[todayKey()] = ds.kind; save(); render(); return; }
+  if (ds.move) {
+    const n = +ds.move;
+    viewDay = n === 0 ? todayKey() : [keyOf(addDays(dateOf(viewDay), n)), todayKey()].sort()[0];
+    render(); return;
+  }
+  if (ds.kind) { data.dayKinds[viewDay] = ds.kind; save(); render(); return; }
   if (ds.snack) { toggleSnack(ds.day, ds.snack); render(); return; }
+  if (ds.protein) { toggleProtein(ds.day, ds.protein); render(); return; }
   if (ds.step) {
-    const ex = exById(ds.ex), d = draft[`${todayKey()}:${ex.id}`], n = +ds.d;
+    const ex = exById(ds.ex), d = draft[`${viewDay}:${ex.id}`], n = +ds.d;
     if (ds.step === 'reps') d.reps = Math.max(1, Math.min(50, d.reps + n));
     else d.weight = n > 0 ? Math.min(40, nextWeight(d.weight)) : (d.weight === 0 ? 0 : prevWeight(d.weight));
     render(); return;
   }
   if (ds.done) {
-    const ex = exById(ds.done), dk = `${todayKey()}:${ex.id}`, d = draft[dk];
-    addSet(ex, d.reps, d.weight);
-    const c = logsOn(todayKey(), ex.id).length;
+    const ex = exById(ds.done), dk = `${viewDay}:${ex.id}`, d = draft[dk];
+    const reached = addSet(ex, d.reps, d.weight, viewDay);
+    const c = logsOn(viewDay, ex.id).length;
+    render();
+    if (reached) { celebrate(reached); return; }
     toast(c === data.clearSets ? `${ex.name} クリア！` : c === data.goalSets ? `${ex.name} 目標達成！` : `${c}セット目を記録しました`);
     if (navigator.vibrate) navigator.vibrate(15);
-    render(); return;
+    return;
   }
-  if (ds.undo) { undoLast(exById(ds.undo)); render(); return; }
+  if (ds.undo) { undoLast(exById(ds.undo), viewDay); render(); return; }
   if (ds.sel) { selected = ds.sel; render(); return; }
   if (ds.del) {
     if (!t.classList.contains('arm')) { t.classList.add('arm'); t.textContent = 'もう一度押して削除'; setTimeout(() => { t.classList.remove('arm'); t.textContent = '削除'; }, 3000); return; }
@@ -541,6 +695,7 @@ document.addEventListener('click', e => {
     if (k === 'clearSets') { data.clearSets = Math.max(1, Math.min(5, data.clearSets + n)); data.goalSets = Math.max(data.goalSets, data.clearSets); }
     else if (k === 'goalSets') data.goalSets = Math.max(data.clearSets, Math.min(6, data.goalSets + n));
     else if (k === 'weeklyGoal') data.weeklyGoal = Math.max(1, Math.min(7, data.weeklyGoal + n));
+    else if (k === 'proteinClear') data.proteinClear = Math.max(1, Math.min(3, data.proteinClear + n));
     else if (k === 'reps') { const ex = exById(id); ex.targetReps = Math.max(1, Math.min(50, ex.targetReps + n)); }
     else if (k === 'weight') { const ex = exById(id); ex.weight = n > 0 ? Math.min(40, nextWeight(ex.weight)) : (ex.weight === 0 ? 0 : prevWeight(ex.weight)); }
     Object.keys(draft).forEach(x => delete draft[x]);
@@ -548,11 +703,16 @@ document.addEventListener('click', e => {
   }
   if (t.id === 'saveBody') {
     const v = parseFloat(($('#w').value || '').replace(',', '.'));
-    setBody(todayKey(), isNaN(v) ? null : v, null);
+    if (isNaN(v) && !bodyOn(viewDay)) return;
+    setBody(viewDay, isNaN(v) ? null : v, null);
     toast(isNaN(v) ? '体重の記録を消しました' : '体重を記録しました');
     render(); return;
   }
   if (t.id === 'exportBtn') { exportData(); return; }
+});
+// 体重の欄でEnter（キーボードの完了）を押したら記録する
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'w') { e.preventDefault(); e.target.blur(); $('#saveBody').click(); }
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'chartEx') { chartEx = e.target.value; render(); }
@@ -595,16 +755,26 @@ function demoData() {
   }
   for (let i = 20; i >= 0; i--) d.bodyLogs.push({day: keyOf(addDays(t, -i)), weight: +(56.4 - i * 0.02 + Math.sin(i) * 0.3).toFixed(1)});
   ['none', 'none', 'little', 'none', 'much', 'none', 'none', 'none', 'none'].forEach((lv, i) => d.snacks[keyOf(addDays(t, -i - 1))] = lv);
+  [1, 2, 1, 1, 0, 1, 2, 1, 1, 0, 1].forEach((n, i) => { if (n) d.protein[keyOf(addDays(t, -i))] = PTIMES.slice(0, n).map(p => p[0]); });
   return d;
 }
 
 data = load();
 render();
+// 確認用：?celebrate=clear か goal で、開いた直後にお祝いを出す
+{ const c = new URLSearchParams(location.search).get('celebrate'); if (c) setTimeout(() => celebrate(c), 300); }
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
 // 日付が変わったら今日の画面を新しくする
 let lastDay = todayKey();
-setInterval(() => { if (todayKey() !== lastDay) { lastDay = todayKey(); selected = lastDay; render(); } }, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden && todayKey() !== lastDay) { lastDay = todayKey(); selected = lastDay; render(); } });
+function rollDay() {
+  const k = todayKey();
+  if (k === lastDay) return;
+  if (viewDay === lastDay) viewDay = k;   // 前の日を見ているときは、その日のままにする
+  if (selected === lastDay) selected = k;
+  lastDay = k; render();
+}
+setInterval(rollDay, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) rollDay(); });
 </script>
 </body>
 </html>
