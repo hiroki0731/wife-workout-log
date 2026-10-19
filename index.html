@@ -128,6 +128,16 @@ select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--lin
 .wd button.on{background:var(--muted);color:#fff;border-color:var(--muted)}
 .exname{border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;background:var(--paper);margin-bottom:8px}
 .note{font-size:12px;color:var(--muted);margin-top:8px}
+.code{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+.syncst{font-size:14px;font-weight:700;color:var(--good)}
+.syncst.ng{color:var(--hot)}
+.rlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.ritem{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:14px;font-weight:700;text-align:left}
+.ritem .sub{font-size:12px;color:var(--muted);font-weight:600}
+.ritem.arm{border-color:var(--hot)}
+.ritem.arm .sub{color:var(--hot)}
+.linkbtn{border:0;background:none;padding:0 0 0 8px;color:var(--muted);font:inherit;text-decoration:underline}
+.linkbtn.arm{color:var(--hot)}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 80px);transform:translateX(-50%);background:var(--deep);color:var(--paper);padding:9px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 /* 日付の行と、前の日に戻したとき */
@@ -197,6 +207,66 @@ let data;   // 読み込みは下の部品がそろってから（一番下で l
 function save() {
   if (DEMO) return;
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { toast('保存できませんでした'); }
+  markDirty();
+}
+
+// ===== スプレッドシートへの写し =====
+// 記録はこのスマホに保存したうえで、連携していれば数秒後にGoogleスプレッドシートへ丸ごと写す。
+// 送れなかったら印を残し、次に開いたときや電波が戻ったときに送り直す。
+const SYNC_KEY = 'home-workout-log-web:sync';
+let sync = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch (e) { return {}; } })();
+let syncGen = 0, syncBusy = false;
+const syncOn = () => !DEMO && !!sync.url;
+function saveSync() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch (e) {} }
+function markDirty() {
+  if (!syncOn()) return;
+  syncGen++; sync.dirty = true; saveSync();
+  clearTimeout(markDirty.t); markDirty.t = setTimeout(pushSync, 3000);
+}
+async function callSync(body) {
+  let j;
+  try {
+    const r = await fetch(sync.url, {method: 'POST', body: JSON.stringify({key: sync.key, ...body})});
+    j = await r.json();
+  } catch (e) { throw new Error('スプレッドシートにつながりませんでした'); }
+  if (!j.ok) throw new Error(j.error || '送れませんでした');
+  return j;
+}
+async function pushSync() {
+  if (!syncOn() || !sync.dirty || syncBusy) return;
+  if (!navigator.onLine) { showSync(); return; }
+  syncBusy = true;
+  const gen = syncGen;
+  try {
+    await callSync({action: 'save', day: todayKey(), data});
+    sync.last = new Date().toISOString(); sync.error = '';
+    if (gen === syncGen) sync.dirty = false;   // 送っている間に増えた記録は、続けてもう一度送る
+  } catch (e) { sync.error = e.message; }
+  syncBusy = false; saveSync(); showSync();
+  if (sync.dirty && !sync.error) setTimeout(pushSync, 500);
+}
+function syncText() {
+  if (sync.error && sync.dirty) return `まだ写せていない記録があります（${sync.error}）。次に開いたときに送り直します`;
+  if (sync.dirty) return '写しています…';
+  if (!sync.last) return 'まだ写していません';
+  const d = new Date(sync.last);
+  return `最後に写した日時：${d.getMonth() + 1}月${d.getDate()}日 ${timeLabel(sync.last)}`;
+}
+function showSync() { const el = $('#syncStatus'); if (el) el.textContent = syncText(); }
+function parseCode(text) {
+  try {
+    const c = JSON.parse(decodeURIComponent(escape(atob(text.trim()))));
+    if (/^https:\/\/script\.google\.com\//.test(c.u) && c.k) return {url: c.u, key: c.k};
+  } catch (e) {}
+  return null;
+}
+const hasRecords = d => d.logs.length + d.bodyLogs.length + Object.keys(d.snacks).length + Object.keys(d.protein).length > 0;
+let restoreList = null;   // 写しから戻すときの候補（日ごと）
+async function loadRestoreList() {
+  restoreList = 'loading'; render();
+  try { restoreList = (await callSync({action: 'list'})).list; }
+  catch (e) { restoreList = null; toast(e.message); }
+  render();
 }
 // ホーム画面のアプリは消されにくいが、念のためブラウザに長期保存をお願いする
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
@@ -639,12 +709,31 @@ function viewSettings() {
     }
     h += '</div>';
   }
-  h += `<div class="card"><h2>記録のバックアップ</h2>
+  h += syncCard() + `<div class="card"><h2>記録のファイルへの書き出し</h2>
     <div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" id="exportBtn">記録を書き出す</button>
     <label class="btn ghost" style="display:inline-block">書き出した記録を読み込む<input type="file" id="importFile" accept="application/json,.json" hidden></label></div>
-    <div class="note">記録はこのスマホの中だけに保存されています。機種変更の前に書き出して、新しいスマホで読み込んでください。</div></div>
+    <div class="note">${syncOn() ? 'スプレッドシートに写しているので、機種変更のときは新しいスマホで連携すれば戻せます。書き出しは念のための予備です。' : '記録はこのスマホの中だけに保存されています。機種変更の前に書き出して、新しいスマホで読み込んでください。'}</div></div>
     <div class="note" style="text-align:center">ダンベルは${data.minWeight}kgから${data.weightStep}kg刻み。0は自重です。</div>`;
   return h;
+}
+
+function syncCard() {
+  let h = '<div class="card"><h2>スプレッドシートへの写し</h2>';
+  if (!syncOn()) {
+    return h + `<input id="syncCode" class="code" placeholder="連携コードを貼り付け" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="row" style="margin-top:8px"><button class="btn" id="syncConnect">連携する</button></div>
+      <div class="note">連携すると、記録するたびにGoogleスプレッドシートへ自動で写しを送ります。スマホの記録が消えても、ここから戻せます。</div></div>`;
+  }
+  h += `<div class="syncst${sync.error && sync.dirty ? ' ng' : ''}" id="syncStatus">${esc(syncText())}</div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:10px"><button class="btn" id="syncNow">今すぐ写す</button>
+    <button class="btn ghost" id="syncRestore">写しから戻す</button></div>`;
+  if (restoreList === 'loading') h += '<div class="note">写しの一覧を読み込んでいます…</div>';
+  else if (Array.isArray(restoreList)) {
+    h += restoreList.length ? '<div class="note">戻したい日を選んでください。今のスマホの記録は、その日の写しに置き換わります。</div><div class="rlist">'
+      + restoreList.map(r => `<button class="ritem" data-restore="${esc(r.day)}"><span>${dayLabel(r.day)} ${timeLabel(r.savedAt)}</span><span class="sub">${r.sets}セット・記録${r.records}件</span></button>`).join('') + '</div>'
+      : '<div class="note">まだ写しがありません。</div>';
+  }
+  return h + `<div class="note">写しは1日1つ、90日分残ります。<button class="linkbtn" id="syncOff">連携をやめる</button></div></div>`;
 }
 
 // ===== 操作 =====
@@ -710,6 +799,17 @@ document.addEventListener('click', e => {
     render(); return;
   }
   if (t.id === 'exportBtn') { exportData(); return; }
+  if (t.id === 'syncConnect') { connectSync(); return; }
+  if (t.id === 'syncNow') { if (!sync.dirty) { sync.dirty = true; syncGen++; } sync.error = ''; showSync(); pushSync(); return; }
+  if (t.id === 'syncRestore') { if (Array.isArray(restoreList)) { restoreList = null; render(); } else loadRestoreList(); return; }
+  if (t.id === 'syncOff') {
+    if (!t.classList.contains('arm')) { t.classList.add('arm'); t.textContent = 'もう一度押してやめる'; setTimeout(() => { t.classList.remove('arm'); t.textContent = '連携をやめる'; }, 3000); return; }
+    sync = {}; saveSync(); restoreList = null; render(); toast('連携をやめました（写しはスプレッドシートに残っています）'); return;
+  }
+  if (ds.restore) {
+    if (!t.classList.contains('arm')) { t.classList.add('arm'); t.querySelector('.sub').textContent = 'もう一度押すと、この日の写しに戻します'; return; }
+    restoreFrom(ds.restore); return;
+  }
 });
 // 体重の欄でEnter（キーボードの完了）を押したら記録する
 document.addEventListener('keydown', e => {
@@ -721,6 +821,28 @@ document.addEventListener('change', e => {
   if (e.target.id === 'importFile') importData(e.target.files[0]);
 });
 
+async function connectSync() {
+  const c = parseCode($('#syncCode').value);
+  if (!c) { toast('連携コードが読み取れませんでした'); return; }
+  sync = {url: c.url, key: c.key}; saveSync();
+  try {
+    const list = (await callSync({action: 'list'})).list;
+    if (list.length && !hasRecords(data)) {
+      // このスマホに記録がなく、写しがある：上書きせず、戻す日を選んでもらう
+      restoreList = list; render(); toast('連携しました。戻したい日を選んでください'); return;
+    }
+    toast('連携しました'); markDirty(); render();
+  } catch (e) { sync = {}; saveSync(); toast(`連携できませんでした（${e.message}）`); render(); }
+}
+async function restoreFrom(day) {
+  try {
+    const d = (await callSync({action: 'get', day})).data;
+    if (!Array.isArray(d.logs) || !Array.isArray(d.exercises)) throw new Error('写しの形が違います');
+    data = Object.assign(structuredClone(INITIAL), d);
+    Object.keys(draft).forEach(x => delete draft[x]);
+    restoreList = null; save(); render(); toast(`戻しました（${data.logs.length}セット）`);
+  } catch (e) { toast(`戻せませんでした（${e.message}）`); }
+}
 async function exportData() {
   const name = `自宅筋トレ記録-${todayKey()}.json`;
   const blob = new Blob([JSON.stringify(data, null, 1)], {type: 'application/json'});
@@ -775,7 +897,10 @@ function rollDay() {
   lastDay = k; render();
 }
 setInterval(rollDay, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) rollDay(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { rollDay(); pushSync(); } });
+// 写せていない記録があれば、開いたときと電波が戻ったときに送り直す
+window.addEventListener('online', pushSync);
+pushSync();
 </script>
 </body>
 </html>
