@@ -1,5 +1,6 @@
 // 電波がなくても開けるようにする。画面は毎回ネットの最新を取りに行き、取れなければ保存しておいたものを出す
-const CACHE = 'wife-workout-log-v1';
+// ブラウザの一時保存（GitHub Pagesは10分）を使うと古い画面が出るので、毎回サーバーに確かめる
+const CACHE = 'wife-workout-log-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
@@ -8,7 +9,8 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(fetch(e.request).then(r => {
+  const same = new URL(e.request.url).origin === location.origin;
+  e.respondWith(fetch(same ? new Request(e.request.url, {cache: 'no-cache'}) : e.request).then(r => {
     const copy = r.clone();
     caches.open(CACHE).then(c => c.put(e.request, copy));
     return r;
