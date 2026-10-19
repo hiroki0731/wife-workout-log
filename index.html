@@ -80,8 +80,10 @@ h1{font-size:24px;margin:0;color:var(--deep);font-weight:800}
 .stepper button{width:40px;height:40px;border:0;border-radius:8px;background:var(--paper);font-size:22px;font-weight:700;color:var(--teal)}
 .stepper span{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
 .done{width:100%;padding:13px;font-size:16px}
-.undo{border:0;background:none;color:var(--muted);font-size:13px;padding:8px 0 0}
-.undo:disabled{display:none}
+.setrow{display:flex;align-items:center;gap:10px;margin-top:10px}
+.setrow .reps{flex:1;margin:0;font-size:14px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.undo{flex:none;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--deep);font-size:14px;font-weight:700;display:flex;align-items:center;gap:4px}
+.undo:active{background:var(--soft)}
 .sug{margin-top:8px;font-size:13px;background:color-mix(in srgb,var(--accent) 22%,var(--paper));border-radius:8px;padding:7px 10px;color:var(--deep);font-weight:600}
 .reps{font-size:13px;color:var(--muted);margin-top:6px}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
@@ -469,8 +471,7 @@ function viewToday() {
         <div class="stepper"><button data-step="weight" data-d="-1" data-ex="${ex.id}">−</button><span>${wText(d.weight)}</span><button data-step="weight" data-d="1" data-ex="${ex.id}">＋</button></div>
       </div>
       <button class="btn done ${sets.length >= data.clearSets ? 'deep' : ''}" data-done="${ex.id}">1セット完了</button>
-      <div class="row"><button class="undo" data-undo="${ex.id}" ${sets.length ? '' : 'disabled'}>1つ取り消す</button><span class="sp"></span></div>
-      ${sets.length ? `<div class="reps">${sets.map(s => `${s.reps}回`).join('・')}</div>` : ''}
+      ${sets.length ? `<div class="setrow"><span class="reps">${sets.map(s => `${s.reps}回`).join('・')}</span><button class="undo" data-undo="${ex.id}" aria-label="最後のセットを取り消す">↶ 取り消す</button></div>` : ''}
       ${sug ? `<div class="sug">↑ ${esc(sug.msg)}</div>` : ''}
       <div class="note">${esc(ex.tip || '')}</div>
     </div>`;
