@@ -182,7 +182,9 @@ const INITIAL = {
       capNote:'15回が楽なら、一段低い場所（膝つき→床）へ進みましょう', tip:'頭からかかとまで一直線。できなければテーブルに手をつく'},
     {id:'overhead', name:'オーバーヘッド・エクステンション', kind:'a', order:2, targetReps:12, weight:5, perSide:false, progress:'weight',
       tip:'座ってやる。肘を天井に向けたまま、肘から先だけ動かす'},
-    {id:'kneeroller', name:'膝コロ', kind:'a', order:3, targetReps:8, weight:0, perSide:false, progress:'reps', repsStep:1, repsCap:12,
+    {id:'kickback', name:'キックバック', kind:'a', order:3, targetReps:12, weight:0, perSide:true, progress:'reps', repsStep:2, repsCap:15,
+      capNote:'15回が楽なら、5kgのダンベルに進みましょう', tip:'二の腕を体と平行に固定し、肘から先だけ後ろへ伸ばす。ペットボトルでよい（自重として記録）'},
+    {id:'kneeroller', name:'膝コロ', kind:'a', order:4, targetReps:8, weight:0, perSide:false, progress:'reps', repsStep:1, repsCap:12,
       capNote:'12回が楽なら、転がす距離を少し伸ばしましょう', tip:'背中を丸めたまま。腰が反る手前で戻る'},
     {id:'bulgarian', name:'ブルガリアンスクワット', kind:'b', order:0, targetReps:10, weight:0, perSide:true, progress:'weight',
       tip:'上体を少し前に倒すとお尻に効く。片脚ずつ'},
@@ -199,9 +201,19 @@ function load() {
   if (DEMO) return demoData();
   try {
     const s = localStorage.getItem(KEY);
-    if (s) return Object.assign(structuredClone(INITIAL), JSON.parse(s));
+    if (s) return migrate(Object.assign(structuredClone(INITIAL), JSON.parse(s)));
   } catch (e) {}
   return structuredClone(INITIAL);
+}
+// 後から足した種目を、保存済みの種目一覧にも足す（保存済みの一覧がそのまま使われるため）。
+// since の日より前の日は、その種目がなくてもクリアの判定に入れない
+const ADDED = [{id: 'kickback', order: 2.5}];
+function migrate(d) {
+  for (const a of ADDED) {
+    if (d.exercises.some(e => e.id === a.id)) continue;
+    d.exercises.push({...structuredClone(INITIAL.exercises.find(e => e.id === a.id)), order: a.order, since: todayKey()});
+  }
+  return d;
 }
 let data;   // 読み込みは下の部品がそろってから（一番下で load する）
 function save() {
@@ -286,6 +298,7 @@ const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 // ===== 記録の計算 =====
 const exById = id => data.exercises.find(e => e.id === id);
 const exercisesOf = kind => data.exercises.filter(e => e.kind === kind).sort((a, b) => a.order - b.order);
+const exercisesOn = (kind, k) => exercisesOf(kind).filter(e => !e.since || e.since <= k);   // その日にあった種目
 const logsOn = (k, exId) => data.logs.filter(l => keyOf(new Date(l.date)) === k && (!exId || l.ex === exId));
 const kg = w => Number.isInteger(w) ? String(w) : w.toFixed(1);
 const wText = w => w === 0 ? '自重' : `${kg(w)}kg`;
@@ -305,7 +318,7 @@ function kindFor(k) {
 function statusFor(k) {
   const logs = logsOn(k);
   if (!logs.length) return 'none';
-  const counts = exercisesOf(kindFor(k)).map(e => logs.filter(l => l.ex === e.id).length);
+  const counts = exercisesOn(kindFor(k), k).map(e => logs.filter(l => l.ex === e.id).length);
   if (counts.every(c => c >= data.goalSets)) return 'goal';
   if (counts.every(c => c >= data.clearSets)) return 'clear';
   return 'partial';
@@ -478,7 +491,7 @@ function snackButtons(k, sm) {
 
 function viewToday() {
   const k = viewDay, today = isToday();
-  const kind = kindFor(k), exs = exercisesOf(kind), status = statusFor(k), logs = logsOn(k), rest = isRest(k);
+  const kind = kindFor(k), exs = exercisesOn(kind, k), status = statusFor(k), logs = logsOn(k), rest = isRest(k);
   const b = bodyOn(k) || {};
   const streak = snackStreak();
   let h = `<div class="dayhead"><button class="nav" data-move="-1" aria-label="前の日">‹</button>
@@ -838,7 +851,7 @@ async function restoreFrom(day) {
   try {
     const d = (await callSync({action: 'get', day})).data;
     if (!Array.isArray(d.logs) || !Array.isArray(d.exercises)) throw new Error('写しの形が違います');
-    data = Object.assign(structuredClone(INITIAL), d);
+    data = migrate(Object.assign(structuredClone(INITIAL), d));
     Object.keys(draft).forEach(x => delete draft[x]);
     restoreList = null; save(); render(); toast(`戻しました（${data.logs.length}セット）`);
   } catch (e) { toast(`戻せませんでした（${e.message}）`); }
@@ -861,7 +874,7 @@ function importData(f) {
     try {
       const d = JSON.parse(r.result);
       if (!Array.isArray(d.logs) || !Array.isArray(d.exercises)) throw new Error();
-      data = Object.assign(structuredClone(INITIAL), d); save(); toast(`読み込みました（${data.logs.length}セット）`); render();
+      data = migrate(Object.assign(structuredClone(INITIAL), d)); save(); toast(`読み込みました（${data.logs.length}セット）`); render();
     } catch (e) { toast('このファイルは読み込めませんでした'); }
   };
   r.readAsText(f);
